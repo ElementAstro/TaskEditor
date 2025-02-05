@@ -16,8 +16,20 @@ import type {
   HistoryEntry,
   HistoryGroup,
   TaskParameter,
+  KeyboardShortcut,
+  WeatherCondition,
+  WorkflowExecutionState,
 } from "@/types/types";
 import getLayoutedElements from "../utils/autoLayout";
+import { WorkflowExecutor } from "@/utils/workflowExecutor";
+
+import type { ReactFlowInstance } from 'reactflow';
+
+declare global {
+  interface Window {
+    reactFlowInstance: ReactFlowInstance;
+  }
+}
 
 const initialNodes = [
   {
@@ -64,6 +76,289 @@ const initialNodeData = {
     name: "New Group",
     description: "A group container for nodes",
   },
+  smartExposure: {
+    name: "Smart Exposure",
+    description: "Auto exposure control",
+    params: {
+      inputs: [
+        {
+          name: "minExposure",
+          type: "number",
+          description: "Minimum exposure time (seconds)",
+          required: true,
+          defaultValue: 0.001,
+          validation: { min: 0.001, max: 3600 }
+        },
+        {
+          name: "maxExposure",
+          type: "number",
+          description: "Maximum exposure time (seconds)",
+          required: true,
+          defaultValue: 300,
+          validation: { min: 0.001, max: 3600 }
+        },
+        {
+          name: "targetADU",
+          type: "number",
+          description: "Target ADU value",
+          required: false,
+          defaultValue: 30000,
+          validation: { min: 1000, max: 65535 }
+        },
+        {
+          name: "binning",
+          type: "number",
+          description: "Pixel binning",
+          required: false,
+          defaultValue: 1,
+          validation: { min: 1, max: 4 }
+        }
+      ],
+      outputs: [
+        {
+          name: "exposureTime",
+          type: "number",
+          description: "Calculated exposure time"
+        },
+        {
+          name: "measuredADU",
+          type: "number",
+          description: "Measured ADU value"
+        },
+        {
+          name: "HFR",
+          type: "number",
+          description: "Half Flux Radius"
+        },
+        {
+          name: "FWHM",
+          type: "number",
+          description: "Full Width at Half Maximum"
+        }
+      ]
+    },
+    exposureConfig: {
+      exposureTime: 1,
+      gain: 0,
+      binning: 1,
+      isAutoExposure: true,
+      targetADU: 30000,
+      maxExposureTime: 300,
+      frame: 'Light'
+    }
+  },
+  filterWheel: {
+    name: "Filter Wheel",
+    description: "Change filter position",
+    params: {
+      inputs: [
+        {
+          name: "position",
+          type: "number",
+          description: "Filter wheel position",
+          required: true,
+          validation: { min: 1, max: 8 }
+        },
+        {
+          name: "filterName",
+          type: "string",
+          description: "Filter name",
+          required: true,
+          options: ["L", "R", "G", "B", "Ha", "OIII", "SII"]
+        }
+      ],
+      outputs: [
+        {
+          name: "focusOffset",
+          type: "number",
+          description: "Focus offset for this filter"
+        }
+      ]
+    }
+  },
+  focus: {
+    name: "Auto Focus",
+    description: "Auto focus control",
+    params: {
+      inputs: [
+        {
+          name: "method",
+          type: "string",
+          description: "Focus method",
+          required: true,
+          defaultValue: "HFD",
+          options: ["HFD", "FWHM", "Contrast"]
+        },
+        {
+          name: "steps",
+          type: "number",
+          description: "Number of steps",
+          required: true,
+          defaultValue: 7,
+          validation: { min: 3, max: 15 }
+        },
+        {
+          name: "stepSize",
+          type: "number",
+          description: "Step size (microns)",
+          required: true,
+          defaultValue: 100,
+          validation: { min: 10, max: 1000 }
+        },
+        {
+          name: "exposure",
+          type: "number",
+          description: "Focus exposure time",
+          required: true,
+          defaultValue: 3,
+          validation: { min: 0.1, max: 10 }
+        }
+      ],
+      outputs: [
+        {
+          name: "position",
+          type: "number",
+          description: "Best focus position"
+        },
+        {
+          name: "hfdValue",
+          type: "number",
+          description: "HFD value"
+        },
+        {
+          name: "temperature",
+          type: "number",
+          description: "Temperature at focus"
+        }
+      ]
+    }
+  },
+  dither: {
+    name: "Dither Control",
+    description: "Dithering control",
+    params: {
+      inputs: [
+        {
+          name: "pixels",
+          type: "number",
+          description: "Dither size in pixels",
+          required: true,
+          defaultValue: 3,
+          validation: { min: 1, max: 10 }
+        },
+        {
+          name: "pattern",
+          type: "string",
+          description: "Dither pattern",
+          required: true,
+          defaultValue: "Spiral",
+          options: ["Spiral", "Random", "Grid"]
+        },
+        {
+          name: "settleTime",
+          type: "number",
+          description: "Settle time (seconds)",
+          required: true,
+          defaultValue: 5,
+          validation: { min: 1, max: 30 }
+        }
+      ],
+      outputs: [
+        {
+          name: "settleStatus",
+          type: "boolean",
+          description: "Settle status"
+        },
+        {
+          name: "rmsError",
+          type: "number",
+          description: "RMS guiding error"
+        }
+      ]
+    }
+  },
+  platesolving: {
+    name: "Plate Solving",
+    description: "Plate solving analysis",
+    params: {
+      inputs: [
+        {
+          name: "downsample",
+          type: "number",
+          description: "Downsample factor",
+          required: false,
+          defaultValue: 2,
+          validation: { min: 1, max: 4 }
+        },
+        {
+          name: "tolerance",
+          type: "number",
+          description: "Search radius (degrees)",
+          required: false,
+          defaultValue: 5,
+          validation: { min: 1, max: 180 }
+        }
+      ],
+      outputs: [
+        {
+          name: "ra",
+          type: "number",
+          description: "Right Ascension"
+        },
+        {
+          name: "dec",
+          type: "number",
+          description: "Declination"
+        },
+        {
+          name: "rotation",
+          type: "number",
+          description: "Field rotation"
+        },
+        {
+          name: "scale",
+          type: "number",
+          description: "Image scale (arcsec/pixel)"
+        }
+      ]
+    }
+  },
+  cooling: {
+    name: "Camera Cooling",
+    description: "Camera temperature control",
+    params: {
+      inputs: [
+        {
+          name: "temperature",
+          type: "number",
+          description: "Target temperature (°C)",
+          required: true,
+          defaultValue: -20,
+          validation: { min: -40, max: 20 }
+        },
+        {
+          name: "duration",
+          type: "number",
+          description: "Cool down duration (minutes)",
+          required: false,
+          defaultValue: 10,
+          validation: { min: 1, max: 60 }
+        }
+      ],
+      outputs: [
+        {
+          name: "currentTemp",
+          type: "number",
+          description: "Current temperature"
+        },
+        {
+          name: "power",
+          type: "number",
+          description: "Cooler power %"
+        }
+      ]
+    }
+  }
 };
 
 interface EditorStore {
@@ -84,6 +379,25 @@ interface EditorStore {
   } | null;
   historyGroups: HistoryGroup[];
 
+  // 新增状态
+  shortcuts: KeyboardShortcut[];
+  weatherData: WeatherCondition | null;
+  selectedNodes: Node[];
+  isMultiSelectMode: boolean;
+  autoSaveInterval: NodeJS.Timeout | null;
+  versions: {
+    id: string;
+    timestamp: number;
+    description: string;
+    state: {
+      nodes: Node[];
+      edges: Edge[];
+    };
+  }[];
+
+  // 新增执行相关状态
+  executionState: WorkflowExecutionState;
+  
   // 操作方法
   setNodes: (nodes: Node[]) => void;
   setEdges: (edges: Edge[]) => void;
@@ -99,6 +413,31 @@ interface EditorStore {
   setContextMenu: (
     menu: { x: number; y: number; type: "node" | "edge" | "pane" } | null
   ) => void;
+
+  // 新增方法
+  setShortcuts: (shortcuts: KeyboardShortcut[]) => void;
+  updateWeatherData: (data: WeatherCondition) => void;
+  setSelectedNodes: (nodes: Node[]) => void;
+  toggleMultiSelectMode: () => void;
+  batchUpdateNodes: (updates: Partial<NodeData['data']>) => void;
+  startAutoSave: (interval: number) => void;
+  stopAutoSave: () => void;
+  createVersion: (description: string) => void;
+  compareVersions: (versionId1: string, versionId2: string) => {
+    added: Node[];
+    removed: Node[];
+    modified: Node[];
+  };
+  restoreVersion: (versionId: string) => void;
+  generateChangelog: () => string;
+
+  // 新增执行相关方法
+  startExecution: () => void;
+  pauseExecution: () => void;
+  stopExecution: () => void;
+  stepExecution: () => void;
+  setStepDelay: (delay: number) => void;
+  setCenterOnStep: (center: boolean) => void;
 
   // 业务操作
   onConnect: (params: Edge | Connection) => void;
@@ -122,6 +461,14 @@ interface EditorStore {
     params: { inputs?: TaskParameter[]; outputs?: TaskParameter[] }
   ) => void;
   validateNodeParams: (nodeId: string) => boolean;
+
+  // 天文观测相关方法
+  updateTelescopeStatus: (status: Partial<NodeData['data']['telescope']>) => void;
+  updateCameraStatus: (status: Partial<NodeData['data']['camera']>) => void;
+  updateGuidingStatus: (status: Partial<NodeData['data']['guiding']>) => void;
+  calculateOptimalExposure: (targetADU: number, currentADU: number) => number;
+  calculateFocusStep: (currentHFD: number, targetHFD: number) => number;
+  validateWeatherConditions: () => boolean;
 }
 
 const useEditorStore = create<EditorStore>((set, get) => ({
@@ -136,6 +483,25 @@ const useEditorStore = create<EditorStore>((set, get) => ({
   searchTerm: "",
   contextMenu: null,
   historyGroups: [],
+
+  // 实现新增的状态和方法
+  shortcuts: [],
+  weatherData: null,
+  selectedNodes: [],
+  isMultiSelectMode: false,
+  autoSaveInterval: null,
+  versions: [],
+
+  executionState: {
+    isRunning: false,
+    isPaused: false,
+    currentNodeId: null,
+    executionPath: [],
+    variables: {},
+    stepDelay: 1000,
+    centerOnStep: true,
+    error: null
+  },
 
   setNodes: (nodes) => set({ nodes }),
   setEdges: (edges) => set({ edges }),
@@ -321,12 +687,30 @@ const useEditorStore = create<EditorStore>((set, get) => ({
 
   handleAutoLayout: () => {
     const { nodes, edges } = get();
-    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
+    const { nodes: layoutedNodes } = getLayoutedElements(
       nodes,
-      edges
+      edges,
+      {
+        direction: 'TB',
+        nodeSpacing: 50,
+        rankSpacing: 100,
+        alignGroups: true,
+        compactLayout: true,
+        optimizeGroups: true
+      }
     );
-    set({ nodes: layoutedNodes, edges: layoutedEdges });
-    get().addHistoryEntry("Auto Layout", "Applied auto layout to workflow");
+    
+    // 使用onNodesChange更新节点位置
+    get().onNodesChange(
+      layoutedNodes.map(node => ({
+        id: node.id,
+        type: 'position',
+        position: node.position,
+      }))
+    );
+
+    // 添加到历史记录
+    get().addHistoryEntry('Auto Layout', 'Applied automatic layout to workflow');
   },
 
   handleAddGroup: () => {
@@ -455,6 +839,300 @@ const useEditorStore = create<EditorStore>((set, get) => ({
 
     return validateParams(inputs) && validateParams(outputs);
   },
+
+  setShortcuts: (shortcuts) => set({ shortcuts }),
+  
+  updateWeatherData: (data) => set({ weatherData: data }),
+  
+  setSelectedNodes: (nodes) => set({ selectedNodes: nodes }),
+  
+  toggleMultiSelectMode: () => set((state) => ({ 
+    isMultiSelectMode: !state.isMultiSelectMode 
+  })),
+  
+  batchUpdateNodes: (updates) => {
+    const { selectedNodes } = get();
+    set((state) => ({
+      nodes: state.nodes.map((node) =>
+        selectedNodes.find((n) => n.id === node.id)
+          ? {
+              ...node,
+              data: { ...node.data, ...updates },
+            }
+          : node
+      ),
+    }));
+  },
+
+  startAutoSave: (interval) => {
+    const timerId = setInterval(() => {
+      get().saveWorkflow();
+    }, interval);
+    set({ autoSaveInterval: timerId });
+  },
+
+  stopAutoSave: () => {
+    const { autoSaveInterval } = get();
+    if (autoSaveInterval) {
+      clearInterval(autoSaveInterval);
+      set({ autoSaveInterval: null });
+    }
+  },
+
+  createVersion: (description) => {
+    const { nodes, edges } = get();
+    set((state) => ({
+      versions: [
+        ...state.versions,
+        {
+          id: Date.now().toString(),
+          timestamp: Date.now(),
+          description,
+          state: { nodes, edges },
+        },
+      ],
+    }));
+  },
+
+  compareVersions: (versionId1, versionId2) => {
+    const { versions } = get();
+    const version1 = versions.find((v) => v.id === versionId1);
+    const version2 = versions.find((v) => v.id === versionId2);
+
+    if (!version1 || !version2) {
+      throw new Error("Version not found");
+    }
+
+    const added = version2.state.nodes.filter(
+      (node) => !version1.state.nodes.find((n) => n.id === node.id)
+    );
+    const removed = version1.state.nodes.filter(
+      (node) => !version2.state.nodes.find((n) => n.id === node.id)
+    );
+    const modified = version2.state.nodes.filter((node) => {
+      const oldNode = version1.state.nodes.find((n) => n.id === node.id);
+      return oldNode && JSON.stringify(oldNode.data) !== JSON.stringify(node.data);
+    });
+
+    return { added, removed, modified };
+  },
+
+  restoreVersion: (versionId) => {
+    const { versions } = get();
+    const version = versions.find((v) => v.id === versionId);
+    if (version) {
+      set({
+        nodes: version.state.nodes,
+        edges: version.state.edges,
+      });
+    }
+  },
+
+  generateChangelog: () => {
+    const { versions } = get();
+    return versions
+      .map((version) => {
+        return `Version ${version.id} - ${version.description}`;
+      })
+      .join("\n");
+  },
+
+  // 天文观测相关方法实现
+  updateTelescopeStatus: (status) => {
+    set(state => ({
+      nodes: state.nodes.map(node => {
+        if (node.type === 'telescope') {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              telescope: {
+                ...node.data.telescope,
+                ...status
+              }
+            }
+          };
+        }
+        return node;
+      })
+    }));
+  },
+
+  updateCameraStatus: (status) => {
+    set(state => ({
+      nodes: state.nodes.map(node => {
+        if (node.type === 'camera') {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              camera: {
+                ...node.data.camera,
+                ...status
+              }
+            }
+          };
+        }
+        return node;
+      })
+    }));
+  },
+
+  updateGuidingStatus: (status) => {
+    set(state => ({
+      nodes: state.nodes.map(node => {
+        if (node.type === 'guiding') {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              guiding: {
+                ...node.data.guiding,
+                ...status
+              }
+            }
+          };
+        }
+        return node;
+      })
+    }));
+  },
+
+  calculateOptimalExposure: (targetADU, currentADU) => {
+    if (currentADU <= 0) return 1; // 默认曝光时间
+    const ratio = targetADU / currentADU;
+    const newExposure = Math.sqrt(ratio); // 使用平方根关系调整曝光时间
+    return Math.min(Math.max(newExposure, 0.001), 3600); // 限制在合理范围内
+  },
+
+  calculateFocusStep: (currentHFD, targetHFD) => {
+    const difference = currentHFD - targetHFD;
+    const stepSize = Math.abs(difference) * 5; // 根据 HFD 差异计算步进大小
+    return Math.min(Math.max(stepSize, 1), 100); // 限制步进范围
+  },
+
+  validateWeatherConditions: () => {
+    const { weatherData } = get();
+    if (!weatherData) return false;
+
+    // 实现天气条件验证逻辑
+    const isTemperatureOk = weatherData.temperature > -10 && weatherData.temperature < 35;
+    const isHumidityOk = weatherData.humidity < 85;
+    const isCloudCoverOk = weatherData.cloudCover < 50;
+    const isSeeingOk = weatherData.seeing < 3;
+
+    return isTemperatureOk && isHumidityOk && isCloudCoverOk && isSeeingOk;
+  },
+
+  startExecution: () => {
+    set((state) => ({
+      executionState: {
+        ...state.executionState,
+        isRunning: true,
+        isPaused: false,
+        currentNodeId: null,
+        executionPath: [],
+        error: null
+      }
+    }));
+    
+    const executor = new WorkflowExecutor(get().nodes, get().edges);
+    const runStep = async () => {
+      const state = get().executionState;
+      if (!state.isRunning || state.isPaused) return;
+
+      const nextNodeId = executor.getNextNode(state.currentNodeId);
+      if (!nextNodeId) {
+        // 工作流结束
+        get().stopExecution();
+        return;
+      }
+
+      // 执行节点操作
+      executor.executeNodeAction(nextNodeId);
+
+      // 更新状态
+      set((state) => ({
+        executionState: {
+          ...state.executionState,
+          currentNodeId: nextNodeId,
+          executionPath: [...state.executionState.executionPath, nextNodeId]
+        }
+      }));
+
+      // 居中显示当前节点
+      if (state.centerOnStep) {
+        const node = get().nodes.find(n => n.id === nextNodeId);
+        if (node && window.reactFlowInstance) {
+          window.reactFlowInstance.setCenter(node.position.x, node.position.y, { duration: 800 });
+        }
+      }
+
+      // 延迟执行下一步
+      await new Promise(resolve => setTimeout(resolve, state.stepDelay));
+      runStep();
+    };
+
+    runStep();
+  },
+
+  pauseExecution: () => {
+    set((state) => ({
+      executionState: {
+        ...state.executionState,
+        isPaused: !state.executionState.isPaused
+      }
+    }));
+  },
+
+  stopExecution: () => {
+    set((state) => ({
+      executionState: {
+        ...state.executionState,
+        isRunning: false,
+        isPaused: false,
+        currentNodeId: null
+      }
+    }));
+  },
+
+  stepExecution: () => {
+    const executor = new WorkflowExecutor(get().nodes, get().edges);
+    const state = get().executionState;
+    
+    const nextNodeId = executor.getNextNode(state.currentNodeId);
+    if (nextNodeId) {
+      executor.executeNodeAction(nextNodeId);
+      set((state) => ({
+        executionState: {
+          ...state.executionState,
+          currentNodeId: nextNodeId,
+          executionPath: [...state.executionState.executionPath, nextNodeId]
+        }
+      }));
+
+      if (state.centerOnStep) {
+        const node = get().nodes.find(n => n.id === nextNodeId);
+        if (node && window.reactFlowInstance) {
+          window.reactFlowInstance.setCenter(node.position.x, node.position.y, { duration: 800 });
+        }
+      }
+    }
+  },
+
+  setStepDelay: (delay) => set((state) => ({
+    executionState: {
+      ...state.executionState,
+      stepDelay: delay
+    }
+  })),
+
+  setCenterOnStep: (center) => set((state) => ({
+    executionState: {
+      ...state.executionState,
+      centerOnStep: center
+    }
+  })),
 }));
 
 export default useEditorStore;

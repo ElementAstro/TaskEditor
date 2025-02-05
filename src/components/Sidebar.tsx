@@ -20,6 +20,10 @@ import {
   RefreshCw,
   GitBranch,
   Repeat,
+  Thermometer,
+  Search,
+  Move,
+  Focus,
 } from "lucide-react";
 
 interface NodeItem {
@@ -41,6 +45,14 @@ const nodeCategories = {
     { type: "filterWheel", name: "Filter Change", icon: Filter },
     { type: "focus", name: "Auto Focus", icon: Image },
     { type: "dither", name: "Dither", icon: RefreshCw },
+  ],
+  "Imaging Control": [
+    { type: "smartExposure", name: "Smart Exposure", icon: Camera },
+    { type: "filterWheel", name: "Filter Wheel", icon: Filter },
+    { type: "focus", name: "Auto Focus", icon: Focus },
+    { type: "dither", name: "Dither Control", icon: Move },
+    { type: "platesolving", name: "Plate Solving", icon: Search },
+    { type: "cooling", name: "Camera Cooling", icon: Thermometer },
   ],
   "Data Management": [
     { type: "task", name: "Basic Task", icon: FileText },

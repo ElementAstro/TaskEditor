@@ -18,6 +18,10 @@ import {
   AlignJustify,
   Hash,
   FileJson,
+  PlayCircle,
+  PauseCircle,
+  StopCircle,
+  Thermometer,
 } from "lucide-react";
 import {
   Select,
@@ -28,6 +32,9 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import type React from "react";
+import WeatherMonitor from "./nodes/weather/WeatherMonitor";
+import useEditorStore from "@/store/editorStore";
+import { exportToYAML, generateWorkflowLogic } from "@/utils/workflowExporter";
 
 interface ToolbarProps {
   toggleSidebar: () => void;
@@ -45,7 +52,41 @@ interface ToolbarProps {
   resetView: () => void;
   isLandscape: boolean;
   exportToJson: () => void;
+  onStartWorkflow?: () => void;
+  onPauseWorkflow?: () => void;
+  onStopWorkflow?: () => void;
+  showWeatherMonitor?: boolean;
+  onToggleWeatherMonitor?: () => void;
 }
+
+const handleExportLogic = () => {
+  const { nodes, edges } = useEditorStore.getState();
+  const workflow = generateWorkflowLogic(nodes, edges);
+  
+  // 提供多种导出格式选择
+  const format = window.prompt('Select export format (json/yaml):', 'json');
+  
+  let exportData: string;
+  let filename: string;
+  
+  if (format?.toLowerCase() === 'yaml') {
+    exportData = exportToYAML(workflow);
+    filename = 'workflow.yaml';
+  } else {
+    exportData = JSON.stringify(workflow, null, 2);
+    filename = 'workflow.json';
+  }
+
+  const blob = new Blob([exportData], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
 
 export default function Toolbar({
   toggleSidebar,
@@ -63,6 +104,11 @@ export default function Toolbar({
   resetView,
   isLandscape,
   exportToJson,
+  onStartWorkflow,
+  onPauseWorkflow,
+  onStopWorkflow,
+  showWeatherMonitor = false,
+  onToggleWeatherMonitor,
 }: ToolbarProps) {
   return (
     <div
@@ -150,6 +196,15 @@ export default function Toolbar({
         >
           <FileJson size={20} />
         </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleExportLogic}
+          className="hover:text-purple-300"
+          title="Export Workflow Logic"
+        >
+          <FileJson size={20} />
+        </Button>
       </div>
 
       {/* 第二组工具 - 背景控制 */}
@@ -231,6 +286,30 @@ export default function Toolbar({
           <Maximize size={20} />
         </Button>
       </div>
+
+      {/* 新增的第四组工具 - 工作流控制和天气监控 */}
+      <div className={`flex ${isLandscape ? "flex-col mt-2" : "space-x-4"} items-center`}>
+        <Button variant="ghost" size="icon" onClick={onStartWorkflow}>
+          <PlayCircle className="h-4 w-4" />
+        </Button>
+        <Button variant="ghost" size="icon" onClick={onPauseWorkflow}>
+          <PauseCircle className="h-4 w-4" />
+        </Button>
+        <Button variant="ghost" size="icon" onClick={onStopWorkflow}>
+          <StopCircle className="h-4 w-4" />
+        </Button>
+        <div className="w-px h-6 bg-gray-200" />
+        <Button 
+          variant="ghost" 
+          size="icon"
+          onClick={onToggleWeatherMonitor}
+          className={showWeatherMonitor ? "text-blue-500" : ""}
+        >
+          <Thermometer className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {showWeatherMonitor && <WeatherMonitor />}
     </div>
   );
 }

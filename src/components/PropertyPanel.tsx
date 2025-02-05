@@ -26,6 +26,320 @@ interface PropertyPanelProps {
   updateNodeData: (id: string, data: Partial<NodeData["data"]>) => void;
 }
 
+// 新增默认参数列表配置
+const DEFAULT_PARAMS = {
+  smartExposure: {
+    inputs: [
+      {
+        name: "binning",
+        type: "number" as const,
+        description: "像素合并",
+        required: true,
+        defaultValue: 1,
+        validation: { min: 1, max: 4 },
+      },
+      {
+        name: "gain",
+        type: "number" as const,
+        description: "增益值",
+        required: true,
+        defaultValue: 0,
+        validation: { min: 0, max: 100 },
+      },
+      {
+        name: "targetADU",
+        type: "number" as const,
+        description: "目标ADU值",
+        required: false,
+        defaultValue: 30000,
+        validation: { min: 1000, max: 65535 },
+      },
+    ],
+    outputs: [
+      {
+        name: "exposureTime",
+        type: "number",
+        description: "实际曝光时间",
+      },
+      {
+        name: "currentADU",
+        type: "number",
+        description: "当前ADU值",
+      },
+    ],
+  },
+  focus: {
+    inputs: [
+      {
+        name: "method",
+        type: "string" as const,
+        description: "对焦方法",
+        required: true,
+        defaultValue: "HFD",
+        options: ["HFD", "FWHM", "Contrast"],
+      },
+      {
+        name: "steps",
+        type: "number" as const,
+        description: "步进数",
+        required: true,
+        defaultValue: 5,
+        validation: { min: 3, max: 15 },
+      },
+    ],
+    outputs: [
+      {
+        name: "position",
+        type: "number",
+        description: "最佳对焦位置",
+      },
+      {
+        name: "hfdValue",
+        type: "number",
+        description: "HFD值",
+      },
+    ],
+  },
+  filterWheel: {
+    inputs: [
+      {
+        name: "filterName",
+        type: "string" as const,
+        description: "滤镜名称",
+        defaultValue: "L",
+        required: true,
+        options: ["L", "R", "G", "B", "Ha", "OIII", "SII"],
+      },
+      {
+        name: "position",
+        type: "number" as const,
+        description: "滤镜位置",
+        defaultValue: 1,
+        required: true,
+        validation: { min: 1, max: 8 },
+      },
+    ],
+    outputs: [
+      {
+        name: "currentFilter",
+        type: "string",
+        description: "当前滤镜",
+      },
+    ],
+  },
+
+  dither: {
+    inputs: [
+      {
+        name: "ditherAmount",
+        type: "number" as const,
+        description: "抖动量(像素)",
+        required: true,
+        defaultValue: 3,
+        validation: { min: 1, max: 10 },
+      },
+      {
+        name: "ditherScale",
+        type: "number" as const,
+        description: "抖动比例",
+        required: true,
+        defaultValue: 1,
+        validation: { min: 0.1, max: 5 },
+      },
+      {
+        name: "pattern",
+        type: "string" as const,
+        description: "抖动模式",
+        required: false,
+        options: ["Spiral", "Random", "Square"],
+        defaultValue: "Spiral",
+      },
+    ],
+    outputs: [
+      {
+        name: "offsetX",
+        type: "number",
+        description: "X轴偏移量",
+      },
+      {
+        name: "offsetY",
+        type: "number",
+        description: "Y轴偏移量",
+      },
+    ],
+  },
+
+  platesolving: {
+    inputs: [
+      {
+        name: "searchRadius",
+        type: "number" as const,
+        description: "搜索半径(度)",
+        required: true,
+        defaultValue: 5,
+        validation: { min: 1, max: 180 },
+      },
+      {
+        name: "accuracy",
+        type: "number" as const,
+        description: "精确度(角秒)",
+        required: true,
+        defaultValue: 1,
+        validation: { min: 0.1, max: 10 },
+      },
+      {
+        name: "timeout",
+        type: "number" as const,
+        description: "超时时间(秒)",
+        required: true,
+        defaultValue: 60,
+        validation: { min: 10, max: 300 },
+      },
+    ],
+    outputs: [
+      {
+        name: "ra",
+        type: "number",
+        description: "赤经",
+      },
+      {
+        name: "dec",
+        type: "number",
+        description: "赤纬",
+      },
+      {
+        name: "rotation",
+        type: "number",
+        description: "旋转角度",
+      },
+    ],
+  },
+
+  cooling: {
+    inputs: [
+      {
+        name: "targetTemp",
+        type: "number" as const,
+        description: "目标温度(°C)",
+        required: true,
+        defaultValue: -10,
+        validation: { min: -40, max: 20 },
+      },
+      {
+        name: "coolingPower",
+        type: "number" as const,
+        description: "制冷功率(%)",
+        required: true,
+        defaultValue: 100,
+        validation: { min: 0, max: 100 },
+      },
+      {
+        name: "duration",
+        type: "number" as const,
+        description: "持续时间(分钟)",
+        required: true,
+        defaultValue: 10,
+        validation: { min: 1, max: 120 },
+      },
+    ],
+    outputs: [
+      {
+        name: "currentTemp",
+        type: "number",
+        description: "当前温度",
+      },
+      {
+        name: "powerUsage",
+        type: "number",
+        description: "功率使用",
+      },
+    ],
+  },
+};
+
+type ParameterValue = string | number | boolean;
+
+// 新增参数值状态管理组件
+// 修改 ParameterValueEditor 组件
+const ParameterValueEditor = ({
+  parameter,
+  value,
+  onChange,
+}: {
+  parameter: TaskParameter;
+  value: ParameterValue;
+  onChange: (value: ParameterValue) => void;
+}) => {
+  switch (parameter.type) {
+    case "number":
+      return (
+        <Input
+          type="number"
+          value={
+            typeof value === "number"
+              ? value
+              : typeof parameter.defaultValue === "number"
+              ? parameter.defaultValue
+              : ""
+          }
+          onChange={(e) => onChange(parseFloat(e.target.value))}
+          min={parameter.validation?.min}
+          max={parameter.validation?.max}
+          step={0.1}
+        />
+      );
+    case "boolean":
+      return (
+        <input
+          type="checkbox"
+          checked={
+            typeof value === "boolean"
+              ? value
+              : typeof parameter.defaultValue === "boolean"
+              ? parameter.defaultValue
+              : false
+          }
+          onChange={(e) => onChange(e.target.checked)}
+        />
+      );
+    case "string":
+      if (parameter.options) {
+        return (
+          <Select
+            value={String(
+              typeof value === "string" ? value : parameter.defaultValue ?? ""
+            )}
+            onValueChange={(val) => onChange(val)}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {parameter.options.map((option) => (
+                <SelectItem key={option} value={option}>
+                  {option}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        );
+      }
+      return (
+        <Input
+          type="text"
+          value={
+            typeof value === "string"
+              ? value
+              : String(parameter.defaultValue ?? "")
+          }
+          onChange={(e) => onChange(e.target.value)}
+        />
+      );
+    default:
+      return null;
+  }
+};
+
 const ParameterEditor = ({
   type,
   parameters,
@@ -62,10 +376,15 @@ const ParameterEditor = ({
 
   return (
     <div className="space-y-4">
-      <h3 className="text-sm font-semibold">{type === "inputs" ? "输入参数" : "输出参数"}</h3>
+      <h3 className="text-sm font-semibold">
+        {type === "inputs" ? "输入参数" : "输出参数"}
+      </h3>
       <div className="space-y-2">
         {parameters.map((param, index) => (
-          <div key={index} className="flex items-center gap-2 p-2 bg-secondary rounded-md">
+          <div
+            key={index}
+            className="flex items-center gap-2 p-2 bg-secondary rounded-md"
+          >
             <span className="flex-1">{param.name}</span>
             <span className="text-sm text-muted-foreground">{param.type}</span>
             <Button
@@ -78,21 +397,19 @@ const ParameterEditor = ({
           </div>
         ))}
       </div>
-      
+
       <div className="space-y-2">
         <div className="flex gap-2">
           <Input
             placeholder="参数名"
             value={newParam.name}
-            onChange={(e) =>
-              setNewParam({ ...newParam, name: e.target.value })
-            }
+            onChange={(e) => setNewParam({ ...newParam, name: e.target.value })}
           />
           <Select
             value={newParam.type}
-            onValueChange={(value: "string" | "number" | "boolean" | "array" | "object") =>
-              setNewParam({ ...newParam, type: value })
-            }
+            onValueChange={(
+              value: "string" | "number" | "boolean" | "array" | "object"
+            ) => setNewParam({ ...newParam, type: value })}
           >
             <SelectTrigger className="w-[120px]">
               <SelectValue />
@@ -154,6 +471,11 @@ export default function PropertyPanel({
     outputs: [],
   });
 
+  // 添加参数值状态管理
+  const [paramValues, setParamValues] = useState<
+    Record<string, ParameterValue>
+  >({});
+
   useEffect(() => {
     if (selectedNode) {
       setName(selectedNode.data.name || "");
@@ -165,6 +487,20 @@ export default function PropertyPanel({
       setEstimatedTime(selectedNode.data.estimatedTime || "");
       setTags(selectedNode.data.tags || []);
       setParams(selectedNode.data.params || { inputs: [], outputs: [] });
+
+      // 初始化参数值
+      const defaultParams =
+        DEFAULT_PARAMS[selectedNode.type as keyof typeof DEFAULT_PARAMS];
+      if (defaultParams) {
+        const initialValues: Record<string, ParameterValue> = {};
+        defaultParams.inputs?.forEach((param) => {
+          const paramName = param.name as keyof typeof selectedNode.data;
+          initialValues[param.name] =
+            (selectedNode.data[paramName] as ParameterValue) ??
+            param.defaultValue;
+        });
+        setParamValues(initialValues);
+      }
     }
   }, [selectedNode]);
 
@@ -197,8 +533,8 @@ export default function PropertyPanel({
   };
 
   const renderBranchConditions = () => {
-    if (selectedNode?.type !== 'branch') return null;
-    
+    if (selectedNode?.type !== "branch") return null;
+
     return (
       <div className="space-y-2">
         <Label>分支条件</Label>
@@ -220,14 +556,14 @@ export default function PropertyPanel({
   };
 
   const renderLoopConfig = () => {
-    if (selectedNode?.type !== 'loop') return null;
+    if (selectedNode?.type !== "loop") return null;
 
     return (
       <div className="space-y-2">
         <Label>循环配置</Label>
         <Select
-          value={selectedNode.data.loopConfig?.type || 'count'}
-          onValueChange={(value: LoopConfig['type']) =>
+          value={selectedNode.data.loopConfig?.type || "count"}
+          onValueChange={(value: LoopConfig["type"]) =>
             updateNodeData(selectedNode.id, {
               loopConfig: { ...selectedNode.data.loopConfig, type: value },
             })
@@ -243,6 +579,48 @@ export default function PropertyPanel({
           </SelectContent>
         </Select>
         {/* 根据循环类型渲染不同的配置选项 */}
+      </div>
+    );
+  };
+
+  const renderDefaultParams = () => {
+    const defaultParams =
+      selectedNode &&
+      DEFAULT_PARAMS[selectedNode.type as keyof typeof DEFAULT_PARAMS];
+    if (!defaultParams) return null;
+
+    return (
+      <div className="space-y-4">
+        <div className="border-l-2 border-blue-500 pl-2">
+          <h3 className="text-sm font-semibold mb-2">内置参数</h3>
+          {defaultParams.inputs?.map((param) => (
+            <div key={param.name} className="mb-2">
+              <Label
+                htmlFor={param.name}
+                className="flex items-center gap-1 text-sm"
+              >
+                {param.name}
+                {param.required && <span className="text-red-500">*</span>}
+              </Label>
+              <div className="flex gap-2 items-center">
+                <ParameterValueEditor
+                  parameter={param}
+                  value={paramValues[param.name]}
+                  onChange={(value) => {
+                    setParamValues((prev) => ({
+                      ...prev,
+                      [param.name]: value,
+                    }));
+                    updateNodeData(selectedNode.id, { [param.name]: value });
+                  }}
+                />
+                <span className="text-xs text-gray-500">
+                  {param.description}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   };
@@ -418,6 +796,7 @@ export default function PropertyPanel({
           </Dialog>
         </div>
 
+        {renderDefaultParams()}
         {renderBranchConditions()}
         {renderLoopConfig()}
 

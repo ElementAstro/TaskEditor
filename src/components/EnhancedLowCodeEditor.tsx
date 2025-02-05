@@ -28,6 +28,15 @@ import ContextMenu from "./ContextMenu";
 import HistoryPanel from "./HistoryPanel";
 import BranchNode from './nodes/BranchNode';
 import LoopNode from './nodes/LoopNode';
+import SmartExposureNode from './nodes/SmartExposureNode';
+import FilterWheelNode from './nodes/imaging/FilterWheelNode';
+import FocusNode from './nodes/imaging/FocusNode';
+import DitherNode from './nodes/imaging/DitherNode';
+import PlateSolvingNode from './nodes/imaging/PlateSolvingNode';
+import CoolingNode from './nodes/imaging/CoolingNode';
+import DeviceMonitor from './DeviceMonitor';
+import WeatherMonitor from "./nodes/weather/WeatherMonitor";
+import ExecutionControl from './ExecutionControl';
 
 const nodeTypes = {
   task: TaskNode,
@@ -37,6 +46,12 @@ const nodeTypes = {
   group: GroupNode,
   branch: BranchNode,
   loop: LoopNode,
+  smartExposure: SmartExposureNode,
+  filterWheel: FilterWheelNode,
+  focus: FocusNode,
+  dither: DitherNode,
+  platesolving: PlateSolvingNode,
+  cooling: CoolingNode,
 };
 
 const edgeTypes = {
@@ -52,6 +67,9 @@ export default function EnhancedLowCodeEditor() {
 
   const [dragStartTime, setDragStartTime] = useState<number | null>(null);
   const dragTimeThreshold = 200; // 200ms长按阈值
+  const [showWeatherMonitor, setShowWeatherMonitor] = useState(false);
+  const [isRunning, setIsRunning] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
 
   // 从 store 获取状态和方法
   const {
@@ -91,6 +109,7 @@ export default function EnhancedLowCodeEditor() {
     setSearchTerm,
     restoreState,
     addNode,
+    validateWeatherConditions
   } = useEditorStore();
 
   const onDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
@@ -185,6 +204,25 @@ export default function EnhancedLowCodeEditor() {
       node.data.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const handleStartWorkflow = () => {
+    if (!validateWeatherConditions()) {
+      alert('天气条件不适合观测！');
+      return;
+    }
+    setIsRunning(true);
+    setIsPaused(false);
+    // 实现工作流执行逻辑
+  };
+
+  const handlePauseWorkflow = () => {
+    setIsPaused(!isPaused);
+  };
+
+  const handleStopWorkflow = () => {
+    setIsRunning(false);
+    setIsPaused(false);
+  };
+
   return (
     <div className="flex flex-col h-screen">
       <Toolbar
@@ -202,7 +240,12 @@ export default function EnhancedLowCodeEditor() {
         zoomOut={zoomOut}
         resetView={() => setViewport({ x: 0, y: 0, zoom: 1 })}
         isLandscape={isLandscape}
-        exportToJson={handleAutoLayout}
+        exportToJson={handleAutoLayout} // 直接使用从store获取的handleAutoLayout
+        onStartWorkflow={handleStartWorkflow}
+        onPauseWorkflow={handlePauseWorkflow}
+        onStopWorkflow={handleStopWorkflow}
+        showWeatherMonitor={showWeatherMonitor}
+        onToggleWeatherMonitor={() => setShowWeatherMonitor(!showWeatherMonitor)}
       />
       <div className="flex flex-1 overflow-hidden">
         <AnimatePresence>
@@ -303,7 +346,7 @@ export default function EnhancedLowCodeEditor() {
             </Panel>
             <Panel position="top-right">
               <button
-                onClick={() => handleAutoLayout()}
+                onClick={handleAutoLayout} // 直接使用从store获取的handleAutoLayout
                 className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
               >
                 Auto Layout
@@ -380,6 +423,9 @@ export default function EnhancedLowCodeEditor() {
           )}
         </AnimatePresence>
       </div>
+      {showWeatherMonitor && <WeatherMonitor />}
+      <DeviceMonitor />
+      <ExecutionControl />
       {isLandscape && (
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-2 flex justify-around">
           <button

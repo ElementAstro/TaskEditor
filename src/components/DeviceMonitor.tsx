@@ -1,0 +1,85 @@
+import { useEffect } from "react";
+import useEditorStore from "@/store/editorStore";
+import { Camera, Telescope, Crosshair } from "lucide-react";
+
+export default function DeviceMonitor() {
+  const { 
+    updateTelescopeStatus, 
+    updateCameraStatus, 
+    updateGuidingStatus,
+    nodes 
+  } = useEditorStore();
+
+  // 从节点中获取设备状态
+  const telescopeNode = nodes.find(node => node.type === 'telescope')?.data.telescope;
+  const cameraNode = nodes.find(node => node.type === 'camera')?.data.camera;
+  const guidingNode = nodes.find(node => node.type === 'guiding')?.data.guiding;
+
+  useEffect(() => {
+    // 模拟设备状态更新
+    const interval = setInterval(() => {
+      updateTelescopeStatus({
+        ra: Math.random() * 24,
+        dec: Math.random() * 180 - 90,
+        pier: Math.random() > 0.5 ? 'east' : 'west',
+        tracking: true,
+        connected: true,
+      });
+
+      updateCameraStatus({
+        temperature: -20 + Math.random() * 5,
+        cooling: true,
+        connected: true,
+        gain: 100,
+        offset: 10,
+      });
+
+      updateGuidingStatus({
+        enabled: true,
+        rmsRA: Math.random() * 0.5,
+        rmsDEC: Math.random() * 0.5,
+        exposure: 2,
+        connected: true,
+      });
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [updateTelescopeStatus, updateCameraStatus, updateGuidingStatus]);
+
+  return (
+    <div className="fixed bottom-4 right-4 bg-white p-4 rounded-lg shadow-lg space-y-4">
+      <div className="flex items-center gap-2">
+        <Telescope className="text-blue-500" />
+        <div>
+          <div className="text-sm font-medium">望远镜</div>
+          <div className="text-xs text-gray-500">
+            RA: {telescopeNode?.ra?.toFixed(2)}h
+            DEC: {telescopeNode?.dec?.toFixed(2)}°
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Camera className="text-green-500" />
+        <div>
+          <div className="text-sm font-medium">相机</div>
+          <div className="text-xs text-gray-500">
+            温度: {cameraNode?.temperature?.toFixed(1)}°C
+            增益: {cameraNode?.gain}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Crosshair className="text-purple-500" />
+        <div>
+          <div className="text-sm font-medium">导星</div>
+          <div className="text-xs text-gray-500">
+            RMS RA: {guidingNode?.rmsRA?.toFixed(2)}&quot;
+            DEC: {guidingNode?.rmsDEC?.toFixed(2)}&quot;
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
