@@ -18,6 +18,8 @@ import {
   AlertTriangle,
   Mail,
   RefreshCw,
+  GitBranch,
+  Repeat,
 } from "lucide-react";
 
 interface NodeItem {
@@ -54,7 +56,8 @@ const nodeCategories = {
   "Automation": [
     { type: "sequence", name: "Sequence", icon: PlayCircle },
     { type: "condition", name: "Condition Check", icon: AlertTriangle },
-    { type: "loop", name: "Loop", icon: RefreshCw },
+    { type: "loop", name: "Loop", icon: Repeat },
+    { type: "branch", name: "Branch", icon: GitBranch },
   ],
 };
 

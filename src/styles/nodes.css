@@ -1,0 +1,82 @@
+.react-flow__node {
+  min-width: 250px;
+  max-width: 400px;
+  cursor: default;
+}
+
+.react-flow__node-task {
+  width: 300px;
+}
+
+.react-flow__handle {
+  width: 10px;
+  height: 10px;
+  background-color: #666;
+  border-radius: 50%;
+  border: 2px solid white;
+}
+
+.react-flow__handle:hover {
+  background-color: #888;
+}
+
+.react-flow__handle-connecting {
+  background-color: #ff6b6b;
+}
+
+.react-flow__handle-valid {
+  background-color: #4caf50;
+}
+
+.react-flow__node[draggable="true"] {
+  cursor: move;
+}
+
+.react-flow__handle-top {
+  top: -5px;
+}
+
+.react-flow__handle-bottom {
+  bottom: -5px;
+}
+
+.node-params {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.param-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.375rem;
+  background-color: #f3f4f6;
+  color: #4b5563;
+  margin: 0.125rem;
+}
+
+.param-type {
+  color: #6b7280;
+  font-size: 0.625rem;
+  margin-left: 0.25rem;
+}
+
+.required-badge {
+  color: #ef4444;
+  margin-left: 0.25rem;
+}
+
+/* 连接线样式 */
+.react-flow__edge-path {
+  stroke-width: 2;
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke: #ff6b6b;
+  stroke-width: 3;
+}
+
+.react-flow__connection-path {
+  stroke: #ff6b6b;
+  stroke-width: 2;
+}

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { HexColorPicker } from "react-colorful";
 import { Calendar, Clock, User, Tag, Plus, X, Save } from "lucide-react";
-import type { NodeData } from "@/types/types";
+import type { LoopConfig, NodeData } from "@/types/types";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -12,11 +12,125 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { TaskParameter } from "@/types/types";
 
 interface PropertyPanelProps {
   selectedNode: NodeData | null;
   updateNodeData: (id: string, data: Partial<NodeData["data"]>) => void;
 }
+
+const ParameterEditor = ({
+  type,
+  parameters,
+  onUpdate,
+}: {
+  type: "inputs" | "outputs";
+  parameters: TaskParameter[];
+  onUpdate: (params: TaskParameter[]) => void;
+}) => {
+  const [newParam, setNewParam] = useState<TaskParameter>({
+    name: "",
+    type: "string",
+    description: "",
+    required: false,
+  });
+
+  const handleAddParam = () => {
+    if (newParam.name) {
+      onUpdate([...parameters, newParam]);
+      setNewParam({
+        name: "",
+        type: "string",
+        description: "",
+        required: false,
+      });
+    }
+  };
+
+  const handleRemoveParam = (index: number) => {
+    const newParams = [...parameters];
+    newParams.splice(index, 1);
+    onUpdate(newParams);
+  };
+
+  return (
+    <div className="space-y-4">
+      <h3 className="text-sm font-semibold">{type === "inputs" ? "输入参数" : "输出参数"}</h3>
+      <div className="space-y-2">
+        {parameters.map((param, index) => (
+          <div key={index} className="flex items-center gap-2 p-2 bg-secondary rounded-md">
+            <span className="flex-1">{param.name}</span>
+            <span className="text-sm text-muted-foreground">{param.type}</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleRemoveParam(index)}
+            >
+              <X size={16} />
+            </Button>
+          </div>
+        ))}
+      </div>
+      
+      <div className="space-y-2">
+        <div className="flex gap-2">
+          <Input
+            placeholder="参数名"
+            value={newParam.name}
+            onChange={(e) =>
+              setNewParam({ ...newParam, name: e.target.value })
+            }
+          />
+          <Select
+            value={newParam.type}
+            onValueChange={(value: "string" | "number" | "boolean" | "array" | "object") =>
+              setNewParam({ ...newParam, type: value })
+            }
+          >
+            <SelectTrigger className="w-[120px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="string">String</SelectItem>
+              <SelectItem value="number">Number</SelectItem>
+              <SelectItem value="boolean">Boolean</SelectItem>
+              <SelectItem value="array">Array</SelectItem>
+              <SelectItem value="object">Object</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button onClick={handleAddParam}>
+            <Plus size={16} />
+          </Button>
+        </div>
+        <Input
+          placeholder="描述"
+          value={newParam.description}
+          onChange={(e) =>
+            setNewParam({ ...newParam, description: e.target.value })
+          }
+        />
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="required"
+            checked={newParam.required}
+            onChange={(e) =>
+              setNewParam({ ...newParam, required: e.target.checked })
+            }
+          />
+          <Label htmlFor="required">必填</Label>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function PropertyPanel({
   selectedNode,
@@ -32,6 +146,13 @@ export default function PropertyPanel({
   const [estimatedTime, setEstimatedTime] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState("");
+  const [params, setParams] = useState<{
+    inputs?: TaskParameter[];
+    outputs?: TaskParameter[];
+  }>({
+    inputs: [],
+    outputs: [],
+  });
 
   useEffect(() => {
     if (selectedNode) {
@@ -43,6 +164,7 @@ export default function PropertyPanel({
       setAssignee(selectedNode.data.assignee || "");
       setEstimatedTime(selectedNode.data.estimatedTime || "");
       setTags(selectedNode.data.tags || []);
+      setParams(selectedNode.data.params || { inputs: [], outputs: [] });
     }
   }, [selectedNode]);
 
@@ -58,6 +180,7 @@ export default function PropertyPanel({
         assignee,
         estimatedTime,
         tags,
+        params,
       });
     }
   };
@@ -71,6 +194,57 @@ export default function PropertyPanel({
 
   const removeTag = (tagToRemove: string) => {
     setTags(tags.filter((tag) => tag !== tagToRemove));
+  };
+
+  const renderBranchConditions = () => {
+    if (selectedNode?.type !== 'branch') return null;
+    
+    return (
+      <div className="space-y-2">
+        <Label>分支条件</Label>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline" className="w-full">
+              编辑条件
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>条件配置</DialogTitle>
+            </DialogHeader>
+            {/* 条件编辑器组件 */}
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  };
+
+  const renderLoopConfig = () => {
+    if (selectedNode?.type !== 'loop') return null;
+
+    return (
+      <div className="space-y-2">
+        <Label>循环配置</Label>
+        <Select
+          value={selectedNode.data.loopConfig?.type || 'count'}
+          onValueChange={(value: LoopConfig['type']) =>
+            updateNodeData(selectedNode.id, {
+              loopConfig: { ...selectedNode.data.loopConfig, type: value },
+            })
+          }
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="count">次数循环</SelectItem>
+            <SelectItem value="while">条件循环</SelectItem>
+            <SelectItem value="forEach">遍历循环</SelectItem>
+          </SelectContent>
+        </Select>
+        {/* 根据循环类型渲染不同的配置选项 */}
+      </div>
+    );
   };
 
   if (!selectedNode) return null;
@@ -211,6 +385,41 @@ export default function PropertyPanel({
             </Button>
           </div>
         </div>
+
+        <div className="space-y-2">
+          <Label>参数设置</Label>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="w-full">
+                编辑参数
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>参数配置</DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-4">
+                <ParameterEditor
+                  type="inputs"
+                  parameters={params.inputs || []}
+                  onUpdate={(newParams) =>
+                    setParams({ ...params, inputs: newParams })
+                  }
+                />
+                <ParameterEditor
+                  type="outputs"
+                  parameters={params.outputs || []}
+                  onUpdate={(newParams) =>
+                    setParams({ ...params, outputs: newParams })
+                  }
+                />
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        {renderBranchConditions()}
+        {renderLoopConfig()}
 
         <Button type="submit" className="w-full">
           <Save size={16} className="mr-2" />
