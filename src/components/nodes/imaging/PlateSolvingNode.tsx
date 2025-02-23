@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { Handle, Position } from "reactflow";
 import { Compass, Loader2 } from "lucide-react";
+import { useTranslation } from 'react-i18next';
 import { TaskParameter } from "@/types/types";
 
 interface PlateSolvingData {
@@ -17,6 +18,7 @@ interface PlateSolvingData {
 }
 
 const PlateSolvingNode = memo(({ data }: { data: PlateSolvingData }) => {
+  const { t } = useTranslation();
   // 提取参数数组并提供默认值
   const inputs = data.params?.inputs ?? [];
   const outputs = data.params?.outputs ?? [];
@@ -44,15 +46,15 @@ const PlateSolvingNode = memo(({ data }: { data: PlateSolvingData }) => {
 
         <div className="grid grid-cols-2 gap-2 bg-orange-50 p-2 rounded">
           <div className="text-xs flex items-center gap-1">
-            <span>Radius: </span>
+            <span>{t('nodes.imaging.radius')}: </span>
             <span className="font-mono">{data.searchRadius}°</span>
           </div>
           <div className="text-xs flex items-center gap-1">
-            <span>Accuracy: </span>
+            <span>{t('nodes.imaging.accuracy')}: </span>
             <span className="font-mono">{data.accuracy}&quot;</span>
           </div>
           <div className="text-xs flex items-center gap-1">
-            <span>Timeout: </span>
+            <span>{t('nodes.imaging.timeout')}: </span>
             <span className="font-mono">{data.timeout}s</span>
           </div>
         </div>
@@ -61,7 +63,7 @@ const PlateSolvingNode = memo(({ data }: { data: PlateSolvingData }) => {
           <div className="mt-2 border-t border-orange-200 pt-2">
             {inputs.length > 0 && (
               <div className="text-xs mb-1">
-                <span className="text-orange-600 font-semibold">Inputs: </span>
+                <span className="text-orange-600 font-semibold">{t('nodes.imaging.inputs')}: </span>
                 {inputs.map((param, i) => (
                   <span
                     key={i}
@@ -74,7 +76,7 @@ const PlateSolvingNode = memo(({ data }: { data: PlateSolvingData }) => {
             )}
             {outputs.length > 0 && (
               <div className="text-xs">
-                <span className="text-orange-600 font-semibold">Outputs: </span>
+                <span className="text-orange-600 font-semibold">{t('nodes.imaging.outputs')}: </span>
                 {outputs.map((param, i) => (
                   <span
                     key={i}

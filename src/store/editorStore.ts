@@ -378,6 +378,9 @@ interface EditorStore {
     type: "node" | "edge" | "pane";
   } | null;
   historyGroups: HistoryGroup[];
+  
+  // 添加 takeSnapshot 方法定义
+  takeSnapshot: () => void;
 
   // 新增状态
   shortcuts: KeyboardShortcut[];
@@ -1133,6 +1136,24 @@ const useEditorStore = create<EditorStore>((set, get) => ({
       centerOnStep: center
     }
   })),
+
+  // 实现 takeSnapshot 方法
+  takeSnapshot: () => {
+    const { nodes, edges } = get();
+    const snapshot = {
+      nodes: [...nodes],
+      edges: [...edges],
+      timestamp: Date.now()
+    };
+    
+    // 添加到历史记录
+    get().addHistoryEntry(
+      "Take Snapshot",
+      `Created snapshot at ${new Date().toLocaleTimeString()}`
+    );
+    
+    return snapshot;
+  },
 }));
 
 export default useEditorStore;

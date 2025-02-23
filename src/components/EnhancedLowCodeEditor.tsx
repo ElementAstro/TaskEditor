@@ -12,6 +12,7 @@ import useMediaQuery from "react-responsive";
 import "reactflow/dist/style.css";
 
 import useEditorStore from "../store/editorStore";
+import useMonitorStore from "../store/monitorStore";
 import Sidebar from "./Sidebar";
 import TaskNode from "./nodes/TaskNode";
 import DecisionNode from "./nodes/DecisionNode";
@@ -34,9 +35,10 @@ import FocusNode from './nodes/imaging/FocusNode';
 import DitherNode from './nodes/imaging/DitherNode';
 import PlateSolvingNode from './nodes/imaging/PlateSolvingNode';
 import CoolingNode from './nodes/imaging/CoolingNode';
-import DeviceMonitor from './DeviceMonitor';
 import WeatherMonitor from "./nodes/weather/WeatherMonitor";
 import ExecutionControl from './ExecutionControl';
+import UnifiedMonitor from './UnifiedMonitor';
+import { FileUploadNode, FileDownloadNode, FolderManagerNode } from './nodes/data';
 
 const nodeTypes = {
   task: TaskNode,
@@ -52,6 +54,9 @@ const nodeTypes = {
   dither: DitherNode,
   platesolving: PlateSolvingNode,
   cooling: CoolingNode,
+  fileUpload: FileUploadNode,
+  fileDownload: FileDownloadNode,
+  folderManage: FolderManagerNode,
 };
 
 const edgeTypes = {
@@ -65,11 +70,8 @@ export default function EnhancedLowCodeEditor() {
     query: "(min-width: 1024px)",
   }) as boolean;
 
-  const [dragStartTime, setDragStartTime] = useState<number | null>(null);
-  const dragTimeThreshold = 200; // 200ms长按阈值
   const [showWeatherMonitor, setShowWeatherMonitor] = useState(false);
-  const [isRunning, setIsRunning] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
+  const { setIsMonitorOpen } = useMonitorStore();
 
   // 从 store 获取状态和方法
   const {
@@ -108,8 +110,7 @@ export default function EnhancedLowCodeEditor() {
     historyGroups,
     setSearchTerm,
     restoreState,
-    addNode,
-    validateWeatherConditions
+    addNode
   } = useEditorStore();
 
   const onDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
@@ -204,30 +205,12 @@ export default function EnhancedLowCodeEditor() {
       node.data.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleStartWorkflow = () => {
-    if (!validateWeatherConditions()) {
-      alert('天气条件不适合观测！');
-      return;
-    }
-    setIsRunning(true);
-    setIsPaused(false);
-    // 实现工作流执行逻辑
-  };
-
-  const handlePauseWorkflow = () => {
-    setIsPaused(!isPaused);
-  };
-
-  const handleStopWorkflow = () => {
-    setIsRunning(false);
-    setIsPaused(false);
-  };
-
   return (
     <div className="flex flex-col h-screen">
       <Toolbar
         toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         togglePropertyPanel={() => setIsPropertyPanelOpen(!isPropertyPanelOpen)}
+        toggleMonitor={() => setIsMonitorOpen(true)}
         setBgColor={setBgColor}
         setBgVariant={setBgVariant}
         saveWorkflow={saveWorkflow}
@@ -240,10 +223,7 @@ export default function EnhancedLowCodeEditor() {
         zoomOut={zoomOut}
         resetView={() => setViewport({ x: 0, y: 0, zoom: 1 })}
         isLandscape={isLandscape}
-        exportToJson={handleAutoLayout} // 直接使用从store获取的handleAutoLayout
-        onStartWorkflow={handleStartWorkflow}
-        onPauseWorkflow={handlePauseWorkflow}
-        onStopWorkflow={handleStopWorkflow}
+        exportToJson={handleAutoLayout}
         showWeatherMonitor={showWeatherMonitor}
         onToggleWeatherMonitor={() => setShowWeatherMonitor(!showWeatherMonitor)}
       />
@@ -307,22 +287,13 @@ export default function EnhancedLowCodeEditor() {
                 type: "pane",
               });
             }}
-            onNodeDragStart={() => {
-              setDragStartTime(Date.now());
-            }}
-            onNodeDrag={(_, node) => {
-              if (dragStartTime && Date.now() - dragStartTime < dragTimeThreshold) {
-                // 如果拖动时间小于阈值，恢复到原始位置
-                node.position = node.position;
-              }
-            }}
+            onNodeDragStart={() => {}}
             defaultEdgeOptions={{
               type: 'custom',
               animated: true,
             }}
             connectOnClick={false}
             onConnectStart={(event, params) => {
-              // 记录连线起点
               console.log('Connection started:', params);
             }}
             onConnectEnd={() => {
@@ -346,7 +317,7 @@ export default function EnhancedLowCodeEditor() {
             </Panel>
             <Panel position="top-right">
               <button
-                onClick={handleAutoLayout} // 直接使用从store获取的handleAutoLayout
+                onClick={handleAutoLayout}
                 className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
               >
                 Auto Layout
@@ -424,7 +395,7 @@ export default function EnhancedLowCodeEditor() {
         </AnimatePresence>
       </div>
       {showWeatherMonitor && <WeatherMonitor />}
-      <DeviceMonitor />
+      <UnifiedMonitor />
       <ExecutionControl />
       {isLandscape && (
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-2 flex justify-around">

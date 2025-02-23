@@ -1,9 +1,12 @@
 import { memo } from 'react';
 import { Handle, Position } from 'reactflow';
 import { Repeat, ArrowRight, RotateCw } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { NodeData } from '@/types/types';
 
 const LoopNode = ({ data }: { data: NodeData['data'] }) => {
+  const { t } = useTranslation();
+
   const getLoopIcon = () => {
     if (!data.loopConfig) return <Repeat />;
     switch (data.loopConfig.type) {
@@ -50,7 +53,7 @@ const LoopNode = ({ data }: { data: NodeData['data'] }) => {
         
         <div className="flex justify-between items-center bg-purple-50 p-2 rounded">
           <div className="flex items-center text-xs text-purple-700">
-            <span>Loop Body</span>
+            <span>{t('nodes.loop.loopBody')}</span>
             <ArrowRight size={14} className="mx-1" />
           </div>
           <div className="text-xs font-medium text-purple-800">
@@ -58,13 +61,13 @@ const LoopNode = ({ data }: { data: NodeData['data'] }) => {
           </div>
           <div className="flex items-center text-xs text-purple-700">
             <ArrowRight size={14} className="mx-1" />
-            <span>Next</span>
+            <span>{t('nodes.loop.next')}</span>
           </div>
         </div>
 
         {data.loopConfig?.maxIterations && (
           <div className="mt-1 text-xs text-gray-500 text-right">
-            Max iterations: {data.loopConfig.maxIterations}
+            {t('nodes.loop.maxIterations')}: {data.loopConfig.maxIterations}
           </div>
         )}
       </div>

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import {
   Flag,
   Trophy,
@@ -25,6 +26,9 @@ import {
   Move,
   Focus,
 } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 interface NodeItem {
   type: string;
@@ -60,12 +64,12 @@ const nodeCategories = {
     { type: "fileDownload", name: "File Download", icon: Download },
     { type: "folderManage", name: "Folder Manager", icon: Folders },
   ],
-  "Integration": [
+  Integration: [
     { type: "task", name: "API Call", icon: Globe },
     { type: "task", name: "Data Processing", icon: Database },
     { type: "notification", name: "Notification", icon: Mail },
   ],
-  "Automation": [
+  Automation: [
     { type: "sequence", name: "Sequence", icon: PlayCircle },
     { type: "condition", name: "Condition Check", icon: AlertTriangle },
     { type: "loop", name: "Loop", icon: Repeat },
@@ -100,6 +104,7 @@ const DraggableNode = ({ node, index }: { node: NodeItem; index: number }) => {
 };
 
 export default function Sidebar() {
+  const { t } = useTranslation();
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -120,73 +125,78 @@ export default function Sidebar() {
   );
 
   return (
-    <aside className="w-64 bg-gray-100 p-4 h-full overflow-y-auto">
-      <h2 className="text-lg font-semibold mb-4">Node Types</h2>
-      
-      <div className="mb-4">
-        <input
+    <div className="w-64 flex flex-col h-full border-r bg-background">
+      <div className="p-4 border-b">
+        <h2 className="text-lg font-semibold mb-4">
+          {t("editor.sidebar.nodeTypes")}
+        </h2>
+        <Input
           type="text"
-          placeholder="Search nodes..."
-          className="w-full px-3 py-2 rounded border"
+          placeholder={t("editor.sidebar.searchNodes")}
+          className="mb-4"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
-      </div>
-
-      <div className="mb-4 flex flex-wrap gap-2">
-        <button
-          className={`px-2 py-1 rounded text-sm ${
-            selectedCategory === null
-              ? "bg-blue-500 text-white"
-              : "bg-gray-200"
-          }`}
-          onClick={() => setSelectedCategory(null)}
-        >
-          All
-        </button>
-        {Object.keys(nodeCategories).map((category) => (
-          <button
-            key={category}
-            className={`px-2 py-1 rounded text-sm ${
-              selectedCategory === category
-                ? "bg-blue-500 text-white"
-                : "bg-gray-200"
-            }`}
-            onClick={() => setSelectedCategory(category)}
-          >
-            {category}
-          </button>
-        ))}
-      </div>
-
-      {Object.entries(filteredCategories).map(([category, nodes]) => (
-        <div key={category} className="mb-4">
-          <button
-            className="w-full text-left font-medium text-gray-700 hover:text-gray-900 flex items-center justify-between"
-            onClick={() => setExpandedCategory(expandedCategory === category ? null : category)}
-          >
-            <span>{category}</span>
-            <span>{expandedCategory === category ? "▼" : "▶"}</span>
-          </button>
-          {expandedCategory === category && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
-              className="mt-2 grid gap-2"
+        <ScrollArea className="h-[40px] whitespace-nowrap">
+          <div className="flex gap-2 px-1">
+            <Button
+              variant={selectedCategory === null ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setSelectedCategory(null)}
             >
-              {nodes.map((node, index) => (
-                <DraggableNode
-                  key={`${node.type}-${index}`}
-                  node={node}
-                  index={index}
-                />
-              ))}
-            </motion.div>
-          )}
+              {t("editor.sidebar.all")}
+            </Button>
+            {Object.keys(nodeCategories).map((category) => (
+              <Button
+                key={category}
+                variant={selectedCategory === category ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setSelectedCategory(category)}
+              >
+                {category}
+              </Button>
+            ))}
+          </div>
+        </ScrollArea>
+      </div>
+
+      <ScrollArea className="flex-1">
+        <div className="p-4 space-y-4">
+          {Object.entries(filteredCategories).map(([category, nodes]) => (
+            <div key={category} className="space-y-2">
+              <Button
+                variant="ghost"
+                className="w-full justify-between font-medium"
+                onClick={() =>
+                  setExpandedCategory(
+                    expandedCategory === category ? null : category
+                  )
+                }
+              >
+                <span>{category}</span>
+                <span>{expandedCategory === category ? "▼" : "▶"}</span>
+              </Button>
+              {expandedCategory === category && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="grid gap-2"
+                >
+                  {nodes.map((node, index) => (
+                    <DraggableNode
+                      key={`${node.type}-${index}`}
+                      node={node}
+                      index={index}
+                    />
+                  ))}
+                </motion.div>
+              )}
+            </div>
+          ))}
         </div>
-      ))}
-    </aside>
+      </ScrollArea>
+    </div>
   );
 }

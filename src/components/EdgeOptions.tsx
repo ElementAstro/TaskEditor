@@ -3,6 +3,7 @@ import type { EdgeData } from "@/types/types";
 import { Paintbrush, Zap, Type } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useTranslation } from 'react-i18next';
 
 interface EdgeOptionsProps {
   selectedEdge: EdgeData;
@@ -13,6 +14,8 @@ export default function EdgeOptions({
   selectedEdge,
   updateEdgeData,
 }: EdgeOptionsProps) {
+  const { t } = useTranslation();
+
   const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     updateEdgeData(selectedEdge.id, {
       style: { ...selectedEdge.style, stroke: e.target.value },
@@ -29,11 +32,11 @@ export default function EdgeOptions({
 
   return (
     <div className="space-y-4 p-4">
-      <h2 className="text-lg font-semibold">Edge Options</h2>
+      <h2 className="text-lg font-semibold">{t('editor.edgeOptions.title')}</h2>
 
       <div className="space-y-2">
         <Label className="flex items-center">
-          <Paintbrush size={16} className="mr-2" /> Color
+          <Paintbrush size={16} className="mr-2" /> {t('editor.edgeOptions.color')}
         </Label>
         <Input
           type="color"
@@ -51,13 +54,13 @@ export default function EdgeOptions({
         />
         <Label className="flex items-center">
           <Zap size={16} className="mr-2" />
-          Animated
+          {t('editor.edgeOptions.animated')}
         </Label>
       </div>
 
       <div className="space-y-2">
         <Label className="flex items-center">
-          <Type size={16} className="mr-2" /> Label
+          <Type size={16} className="mr-2" /> {t('editor.edgeOptions.label')}
         </Label>
         <Input
           type="text"

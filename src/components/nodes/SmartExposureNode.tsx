@@ -1,9 +1,11 @@
 import { memo } from 'react';
 import { Handle, Position } from 'reactflow';
 import { Camera, Settings, Sliders } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { NodeData } from '@/types/types';
 
 const SmartExposureNode = ({ data }: { data: NodeData['data'] }) => {
+  const { t } = useTranslation();
   const hasInputs = data?.params?.inputs && data.params.inputs.length > 0;
   const hasOutputs = data?.params?.outputs && data.params.outputs.length > 0;
 
@@ -29,11 +31,11 @@ const SmartExposureNode = ({ data }: { data: NodeData['data'] }) => {
           <div className="grid grid-cols-2 gap-2 bg-blue-50 p-2 rounded mb-2">
             <div className="text-xs flex items-center gap-1">
               <Sliders className="w-3 h-3" />
-              <span>Exposure: </span>
+              <span>{t('nodes.exposure.exposure')}: </span>
               <span className="font-mono">{data.exposureConfig.exposureTime}s</span>
             </div>
             <div className="text-xs">
-              <span>Gain: </span>
+              <span>{t('nodes.exposure.gain')}: </span>
               <span className="font-mono">{data.exposureConfig.gain}</span>
             </div>
             <div className="text-xs">
@@ -51,7 +53,7 @@ const SmartExposureNode = ({ data }: { data: NodeData['data'] }) => {
         <div className="text-xs space-y-1">
           {hasInputs && (
             <div className="border-l-2 border-blue-300 pl-2">
-              <div className="font-medium text-blue-800 mb-1">Inputs:</div>
+              <div className="font-medium text-blue-800 mb-1">{t('nodes.common.inputs')}:</div>
               <div className="grid grid-cols-2 gap-1">
                 {data.params?.inputs?.map((param, index) => (
                   <div
@@ -70,7 +72,7 @@ const SmartExposureNode = ({ data }: { data: NodeData['data'] }) => {
           
           {hasOutputs && (
             <div className="border-l-2 border-green-300 pl-2">
-              <div className="font-medium text-green-800 mb-1">Outputs:</div>
+              <div className="font-medium text-green-800 mb-1">{t('nodes.common.outputs')}:</div>
               <div className="grid grid-cols-2 gap-1">
                 {data.params?.outputs?.map((param, index) => (
                   <div

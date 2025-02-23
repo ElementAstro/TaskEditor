@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Handle, Position } from "reactflow";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from 'react-i18next';
 
 interface DecisionNodeData {
   name: string;
@@ -9,6 +10,7 @@ interface DecisionNodeData {
 }
 
 export default function DecisionNode({ data }: { data: DecisionNodeData }) {
+  const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
@@ -37,7 +39,7 @@ export default function DecisionNode({ data }: { data: DecisionNodeData }) {
               onClick={() => setIsExpanded(!isExpanded)}
               className="text-yellow-500 hover:text-yellow-700"
             >
-              {isExpanded ? "Hide details" : "Show details"}
+              {isExpanded ? t('nodes.common.hide') : t('nodes.common.show')}
             </Button>
           </div>
         </div>

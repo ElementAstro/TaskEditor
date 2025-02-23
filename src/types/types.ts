@@ -240,3 +240,36 @@ export interface WorkflowExecutionState {
   centerOnStep: boolean;
   error: string | null;
 }
+
+export interface FileUploadData {
+  name: string;
+  description: string;
+  path: string;
+  fileType: string;
+  params?: {
+    inputs?: TaskParameter[];
+    outputs?: TaskParameter[];
+  };
+}
+
+export interface FileDownloadData {
+  name: string;
+  description: string;
+  url: string;
+  savePath: string;
+  params?: {
+    inputs?: TaskParameter[];
+    outputs?: TaskParameter[];
+  };
+}
+
+export interface FolderManagerData {
+  name: string;
+  description: string;
+  operation: 'create' | 'delete' | 'move' | 'rename';
+  folderPath: string;
+  params?: {
+    inputs?: TaskParameter[];
+    outputs?: TaskParameter[];
+  };
+}

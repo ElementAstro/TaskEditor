@@ -1,9 +1,11 @@
 import { memo } from 'react';
 import { Handle, Position } from 'reactflow';
 import { Camera } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { NodeData } from '@/types/types';
 
 const SmartExposureNode = ({ data }: { data: NodeData['data'] }) => {
+  const { t } = useTranslation();
   const { exposureConfig } = data;
 
   return (
@@ -23,20 +25,20 @@ const SmartExposureNode = ({ data }: { data: NodeData['data'] }) => {
         {exposureConfig && (
           <div className="mt-2 space-y-1 text-xs">
             <div className="flex justify-between">
-              <span>曝光时间:</span>
+              <span>{t('nodes.imaging.exposureTime')}:</span>
               <span>{exposureConfig.exposureTime}s</span>
             </div>
             <div className="flex justify-between">
-              <span>增益:</span>
+              <span>{t('nodes.imaging.gain')}:</span>
               <span>{exposureConfig.gain}</span>
             </div>
             <div className="flex justify-between">
-              <span>合并:</span>
+              <span>{t('nodes.imaging.binning')}:</span>
               <span>{exposureConfig.binning}x{exposureConfig.binning}</span>
             </div>
             {exposureConfig.isAutoExposure && (
               <div className="flex justify-between">
-                <span>目标ADU:</span>
+                <span>{t('nodes.imaging.targetADU')}:</span>
                 <span>{exposureConfig.targetADU}</span>
               </div>
             )}

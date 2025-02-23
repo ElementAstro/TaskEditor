@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { ChevronDown, ChevronUp, GripHorizontal } from "lucide-react";
+import { useTranslation } from 'react-i18next';
 import type { HistoryGroup } from "@/types/types";
 
 interface HistoryPanelProps {
@@ -11,6 +12,7 @@ export default function HistoryPanel({
   historyGroups,
   onRestoreState,
 }: HistoryPanelProps) {
+  const { t } = useTranslation();
   const [isMinimized, setIsMinimized] = useState(false);
   const [position, setPosition] = useState({
     x: 20,
@@ -82,7 +84,7 @@ export default function HistoryPanel({
         <div className="bg-gray-100 p-2 flex items-center justify-between drag-handle cursor-move">
           <div className="flex items-center">
             <GripHorizontal size={16} className="mr-2 text-gray-500" />
-            <span className="font-medium">History</span>
+            <span className="font-medium">{t('editor.history.title')}</span>
           </div>
           <button
             onClick={() => setIsMinimized(!isMinimized)}

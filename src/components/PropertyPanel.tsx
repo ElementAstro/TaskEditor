@@ -1,6 +1,17 @@
 import { useState, useEffect } from "react";
 import { HexColorPicker } from "react-colorful";
-import { Calendar, Clock, User, Tag, Plus, X, Save } from "lucide-react";
+import { 
+  Plus, 
+  X, 
+  Save,
+  Calendar,
+  Clock,
+  User,
+  Tag,
+  Flag,
+  Settings,
+  Filter
+} from "lucide-react";
 import type { LoopConfig, NodeData } from "@/types/types";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +31,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { TaskParameter } from "@/types/types";
+import { useTranslation } from "react-i18next";
 
 interface PropertyPanelProps {
   selectedNode: NodeData | null;
@@ -340,7 +352,7 @@ const ParameterValueEditor = ({
   }
 };
 
-const ParameterEditor = ({
+export const ParameterEditor = ({
   type,
   parameters,
   onUpdate,
@@ -453,6 +465,8 @@ export default function PropertyPanel({
   selectedNode,
   updateNodeData,
 }: PropertyPanelProps) {
+  const { t } = useTranslation();
+
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [color, setColor] = useState("#60a5fa");
@@ -592,7 +606,10 @@ export default function PropertyPanel({
     return (
       <div className="space-y-4">
         <div className="border-l-2 border-blue-500 pl-2">
-          <h3 className="text-sm font-semibold mb-2">内置参数</h3>
+          <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
+            <Filter size={16} className="text-muted-foreground" />
+            {t("propertyPanel.builtInParams")}
+          </h3>
           {defaultParams.inputs?.map((param) => (
             <div key={param.name} className="mb-2">
               <Label
@@ -629,180 +646,178 @@ export default function PropertyPanel({
 
   return (
     <div className="w-64 bg-background p-4 h-full overflow-y-auto border-l">
-      <h2 className="text-lg font-semibold mb-4">节点属性</h2>
+      <h2 className="text-lg font-semibold mb-4">{t("propertyPanel.title")}</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* 基本字段 */}
         <div className="space-y-2">
-          <Label htmlFor="name">名称</Label>
+          <Label htmlFor="name">{t("propertyPanel.name")}</Label>
           <Input
             id="name"
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="description">描述</Label>
-          <textarea
+          <Label htmlFor="description">{t("propertyPanel.description")}</Label>
+          <Input
             id="description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="w-full min-h-[80px] rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            rows={3}
           />
         </div>
 
+        {/* 颜色选择器 */}
         <div className="space-y-2">
-          <Label htmlFor="color">颜色</Label>
-          <div className="flex items-center gap-2">
-            <Button
+          <Label>{t("propertyPanel.color")}</Label>
+          <div className="relative">
+            <button
               type="button"
-              variant="outline"
-              className="w-10 h-10 p-0"
+              className="w-8 h-8 rounded border"
               style={{ backgroundColor: color }}
               onClick={() => setShowColorPicker(!showColorPicker)}
             />
-            <span className="text-sm">{color}</span>
+            {showColorPicker && (
+              <div className="absolute z-10 mt-2">
+                <div
+                  className="fixed inset-0"
+                  onClick={() => setShowColorPicker(false)}
+                />
+                <HexColorPicker
+                  color={color}
+                  onChange={setColor}
+                  className="relative z-20"
+                />
+              </div>
+            )}
           </div>
-          {showColorPicker && (
-            <div className="mt-2">
-              <HexColorPicker color={color} onChange={setColor} />
-            </div>
-          )}
         </div>
 
+        {/* 优先级选择 */}
         <div className="space-y-2">
-          <Label htmlFor="priority">优先级</Label>
+          <Label className="flex items-center gap-2">
+            <Flag size={16} className="text-muted-foreground" />
+            {t("propertyPanel.priority")}
+          </Label>
           <Select
             value={priority}
-            onValueChange={(value: "low" | "medium" | "high") =>
-              setPriority(value)
-            }
+            onValueChange={(value: typeof priority) => setPriority(value)}
           >
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="low">Low</SelectItem>
-              <SelectItem value="medium">Medium</SelectItem>
-              <SelectItem value="high">High</SelectItem>
+              <SelectItem value="low">
+                {t("propertyPanel.priorityLow")}
+              </SelectItem>
+              <SelectItem value="medium">
+                {t("propertyPanel.priorityMedium")}
+              </SelectItem>
+              <SelectItem value="high">
+                {t("propertyPanel.priorityHigh")}
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
 
+        {/* 标签管理 */}
         <div className="space-y-2">
-          <Label htmlFor="dueDate" className="flex items-center gap-2">
-            <Calendar size={16} />
-            截止日期
-          </Label>
-          <Input
-            type="date"
-            id="dueDate"
-            value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="assignee" className="flex items-center gap-2">
-            <User size={16} />
-            负责人
-          </Label>
-          <Input
-            type="text"
-            id="assignee"
-            value={assignee}
-            onChange={(e) => setAssignee(e.target.value)}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="estimatedTime" className="flex items-center gap-2">
-            <Clock size={16} />
-            预计时间 (小时)
-          </Label>
-          <Input
-            type="number"
-            id="estimatedTime"
-            value={estimatedTime}
-            onChange={(e) => setEstimatedTime(e.target.value)}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="tags" className="flex items-center gap-2">
-            <Tag size={16} />
-            标签
+          <Label className="flex items-center gap-2">
+            <Tag size={16} className="text-muted-foreground" />
+            {t("propertyPanel.tags")}
           </Label>
           <div className="flex flex-wrap gap-2">
-            {tags.map((tag, index) => (
-              <span
-                key={index}
-                className="inline-flex items-center gap-1 bg-secondary rounded-md px-2 py-1 text-xs"
+            {tags.map((tag) => (
+              <div
+                key={tag}
+                className="flex items-center bg-secondary rounded-md px-2 py-1"
               >
-                {tag}
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-auto p-0"
-                  onClick={() => removeTag(tag)}
-                >
-                  <X size={12} />
-                </Button>
-              </span>
+                <span>{tag}</span>
+                <button type="button" onClick={() => removeTag(tag)}>
+                  <X size={14} className="ml-2" />
+                </button>
+              </div>
             ))}
           </div>
           <div className="flex gap-2">
             <Input
               value={newTag}
               onChange={(e) => setNewTag(e.target.value)}
-              placeholder="添加标签"
+              placeholder={t("propertyPanel.newTag")}
+              onKeyDown={(e) =>
+                e.key === "Enter" && (e.preventDefault(), addTag())
+              }
             />
-            <Button type="button" onClick={addTag} size="icon">
+            <Button type="button" onClick={addTag}>
               <Plus size={16} />
             </Button>
           </div>
         </div>
 
+        {/* 日期和时间选择 */}
         <div className="space-y-2">
-          <Label>参数设置</Label>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="w-full">
-                编辑参数
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>参数配置</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-4">
-                <ParameterEditor
-                  type="inputs"
-                  parameters={params.inputs || []}
-                  onUpdate={(newParams) =>
-                    setParams({ ...params, inputs: newParams })
-                  }
-                />
-                <ParameterEditor
-                  type="outputs"
-                  parameters={params.outputs || []}
-                  onUpdate={(newParams) =>
-                    setParams({ ...params, outputs: newParams })
-                  }
-                />
-              </div>
-            </DialogContent>
-          </Dialog>
+          <Label className="flex items-center gap-2">
+            <Calendar size={16} className="text-muted-foreground" />
+            {t("propertyPanel.dueDate")}
+          </Label>
+          <Input
+            type="date"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
+          />
         </div>
 
-        {renderDefaultParams()}
+        <div className="space-y-2">
+          <Label className="flex items-center gap-2">
+            <Clock size={16} className="text-muted-foreground" />
+            {t("propertyPanel.estimatedTime")}
+          </Label>
+          <Input
+            value={estimatedTime}
+            onChange={(e) => setEstimatedTime(e.target.value)}
+            placeholder="预计用时(分钟)"
+          />
+        </div>
+
+        {/* 负责人选择 */}
+        <div className="space-y-2">
+          <Label className="flex items-center gap-2">
+            <User size={16} className="text-muted-foreground" />
+            {t("propertyPanel.assignee")}
+          </Label>
+          <Input
+            value={assignee}
+            onChange={(e) => setAssignee(e.target.value)}
+            placeholder="负责人"
+          />
+        </div>
+
+        {/* 参数编辑器 */}
+        {selectedNode?.type !== "start" && selectedNode?.type !== "end" && (
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold flex items-center gap-2">
+              <Settings size={16} className="text-muted-foreground" />
+              {t("propertyPanel.parameters")}
+            </h3>
+            <ParameterEditor
+              type="inputs"
+              parameters={params.inputs || []}
+              onUpdate={(inputs) => setParams({ ...params, inputs })}
+            />
+            <ParameterEditor
+              type="outputs"
+              parameters={params.outputs || []}
+              onUpdate={(outputs) => setParams({ ...params, outputs })}
+            />
+          </div>
+        )}
+
+        {/* 条件分支、循环和参数配置 */}
         {renderBranchConditions()}
         {renderLoopConfig()}
+        {renderDefaultParams()}
 
+        {/* 提交按钮 */}
         <Button type="submit" className="w-full">
           <Save size={16} className="mr-2" />
-          更新
+          {t("propertyPanel.update")}
         </Button>
       </form>
     </div>

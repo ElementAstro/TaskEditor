@@ -1,9 +1,12 @@
 import { memo } from 'react';
 import { Handle, Position } from 'reactflow';
 import { GitBranch, ArrowRight, Check, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { NodeData } from '@/types/types';
 
 const BranchNode = ({ data }: { data: NodeData['data'] }) => {
+  const { t } = useTranslation();
+  
   return (
     <>
       <Handle type="target" position={Position.Top} className="w-16 !bg-gray-500" isConnectable={true} />
@@ -22,7 +25,7 @@ const BranchNode = ({ data }: { data: NodeData['data'] }) => {
           <div className="flex items-center text-red-500">
             <X size={16} />
             <ArrowRight size={16} className="mx-1" />
-            <span className="text-xs">False</span>
+            <span className="text-xs">{t('nodes.branch.false')}</span>
           </div>
           <div className="flex-1">
             {Array.isArray(data.conditions) && data.conditions.length > 0 ? (
@@ -46,7 +49,7 @@ const BranchNode = ({ data }: { data: NodeData['data'] }) => {
             )}
           </div>
           <div className="flex items-center text-green-500">
-            <span className="text-xs">True</span>
+            <span className="text-xs">{t('nodes.branch.true')}</span>
             <ArrowRight size={16} className="mx-1" />
             <Check size={16} />
           </div>

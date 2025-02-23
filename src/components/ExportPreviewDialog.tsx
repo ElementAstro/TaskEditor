@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { WorkflowExport } from "@/types/types";
 import { exportToYAML } from "@/utils/workflowExporter";
+import { useTranslation } from 'react-i18next';
 
 interface ExportPreviewDialogProps {
   isOpen: boolean;
@@ -17,11 +18,13 @@ export default function ExportPreviewDialog({
   workflow,
   onExport,
 }: ExportPreviewDialogProps) {
+  const { t } = useTranslation();
+  
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl h-[80vh]">
         <DialogHeader>
-          <DialogTitle>Export Workflow Preview</DialogTitle>
+          <DialogTitle>{t('editor.exportDialog.title')}</DialogTitle>
         </DialogHeader>
         <Tabs defaultValue="json" className="flex-1 overflow-hidden">
           <TabsList>
@@ -44,18 +47,18 @@ export default function ExportPreviewDialog({
           
           <TabsContent value="graph" className="h-full">
             <div className="p-4 bg-gray-50 rounded h-full">
-              <h3 className="font-bold mb-4">Task Dependencies</h3>
+              <h3 className="font-bold mb-4">{t('editor.exportDialog.taskDependencies')}</h3>
               {workflow.tasks.map(task => (
                 <div key={task.id} className="mb-4 p-2 border rounded">
                   <div className="font-medium">{task.name}</div>
                   <div className="text-sm text-gray-500">
-                    Type: {task.type}
+                    {t('editor.exportDialog.type')}: {task.type}
                   </div>
                   <div className="text-sm">
-                    Next Tasks:{' '}
+                    {t('editor.exportDialog.nextTasks')}:{' '}
                     {task.next.length > 0 
                       ? task.next.join(', ')
-                      : 'None'}
+                      : t('editor.exportDialog.none')}
                   </div>
                 </div>
               ))}
@@ -65,13 +68,13 @@ export default function ExportPreviewDialog({
         
         <div className="flex justify-end gap-2 mt-4">
           <Button variant="outline" onClick={() => onExport('json')}>
-            Export as JSON
+            {t('editor.exportDialog.exportJson')}
           </Button>
           <Button variant="outline" onClick={() => onExport('yaml')}>
-            Export as YAML
+            {t('editor.exportDialog.exportYaml')}
           </Button>
           <Button variant="outline" onClick={onClose}>
-            Close
+            {t('editor.exportDialog.close')}
           </Button>
         </div>
       </DialogContent>
